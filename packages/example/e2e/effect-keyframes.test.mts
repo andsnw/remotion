@@ -44,79 +44,7 @@ test.describe('effect keyframes', () => {
 		await stopStudio();
 	});
 
-	test('adds the effect prop before adding a keyframe', async () => {
-		const schema = wave().definition.schema;
-		const content = fs.readFileSync(effectKeyframeE2eFile, 'utf-8');
-		const solidLine = getLine(content, '<Solid');
-
-		const subscription = await apiCall('/api/subscribe-to-sequence-props', {
-			fileName: 'src/EffectKeyframeE2e.tsx',
-			line: solidLine,
-			column: 0,
-			nodePath: null,
-			componentIdentity: 'dev.remotion.remotion.Solid',
-			keys: [],
-			effects: [getAllSchemaKeys(schema)],
-			clientId: 'effect-keyframe-subscribe',
-		});
-		expect(subscription.success).toBe(true);
-		assert(subscription.success);
-		expect(subscription.data.success).toBe(true);
-		assert(subscription.data.success);
-		expect(subscription.data.status.canUpdate).toBe(true);
-		assert(subscription.data.status.canUpdate);
-		const [effectStatus] = subscription.data.status.effects;
-		assert(effectStatus);
-		expect(effectStatus.canUpdate).toBe(true);
-		assert(effectStatus.canUpdate);
-		expect(effectStatus.props.phase).toEqual({
-			status: 'static',
-			codeValue: undefined,
-			keyframeDisplayOffsetAdjustment: null,
-		});
-
-		const keyframe = await apiCall('/api/add-effect-keyframe', {
-			fileName: 'src/EffectKeyframeE2e.tsx',
-			sequenceNodePath: subscription.data.nodePath,
-			effectIndex: 0,
-			key: 'phase',
-			frame: 30,
-			value: JSON.stringify(90),
-			schema,
-			clientId: 'effect-keyframe-add',
-		});
-		expect(keyframe.success).toBe(true);
-		assert(keyframe.success);
-		expect(keyframe.data.canUpdate).toBe(true);
-		assert(keyframe.data.canUpdate);
-		expect(keyframe.data.props.phase).toEqual({
-			status: 'keyframed',
-			interpolationFunction: 'interpolate',
-			keyframes: [{frame: 30, value: 90}],
-			easing: [],
-			clamping: {left: 'clamp', right: 'clamp'},
-			keyframeDisplayOffsetAdjustment: 0,
-		});
-
-		await expect
-			.poll(
-				() => {
-					const output = fs.readFileSync(effectKeyframeE2eFile, 'utf-8');
-					return (
-						output.includes('const frame = useCurrentFrame();') &&
-						output.includes('phase: interpolate(frame, [30], [90], {')
-					);
-				},
-				{
-					message:
-						'Expected EffectKeyframeE2e.tsx to contain the inserted phase keyframe',
-					timeout: 10_000,
-				},
-			)
-			.toBe(true);
-	});
-
-	test('accepts precise inspector values and expands collapsed timeline tracks', async ({
+	test('edits precise inspector values and adds effect keyframes', async ({
 		page,
 	}) => {
 		test.setTimeout(120_000);
@@ -367,5 +295,75 @@ test.describe('effect keyframes', () => {
 		await expect(
 			page.getByRole('button', {name: '60.525', exact: true}),
 		).toBeVisible();
+
+		const schema = wave().definition.schema;
+		const content = fs.readFileSync(effectKeyframeE2eFile, 'utf-8');
+		const solidLine = getLine(content, '<Solid');
+
+		const subscription = await apiCall('/api/subscribe-to-sequence-props', {
+			fileName: 'src/EffectKeyframeE2e.tsx',
+			line: solidLine,
+			column: 0,
+			nodePath: null,
+			componentIdentity: 'dev.remotion.remotion.Solid',
+			keys: [],
+			effects: [getAllSchemaKeys(schema)],
+			clientId: 'effect-keyframe-subscribe',
+		});
+		expect(subscription.success).toBe(true);
+		assert(subscription.success);
+		expect(subscription.data.success).toBe(true);
+		assert(subscription.data.success);
+		expect(subscription.data.status.canUpdate).toBe(true);
+		assert(subscription.data.status.canUpdate);
+		const [effectStatus] = subscription.data.status.effects;
+		assert(effectStatus);
+		expect(effectStatus.canUpdate).toBe(true);
+		assert(effectStatus.canUpdate);
+		expect(effectStatus.props.phase).toEqual({
+			status: 'static',
+			codeValue: undefined,
+			keyframeDisplayOffsetAdjustment: null,
+		});
+
+		const keyframe = await apiCall('/api/add-effect-keyframe', {
+			fileName: 'src/EffectKeyframeE2e.tsx',
+			sequenceNodePath: subscription.data.nodePath,
+			effectIndex: 0,
+			key: 'phase',
+			frame: 30,
+			value: JSON.stringify(90),
+			schema,
+			clientId: 'effect-keyframe-add',
+		});
+		expect(keyframe.success).toBe(true);
+		assert(keyframe.success);
+		expect(keyframe.data.canUpdate).toBe(true);
+		assert(keyframe.data.canUpdate);
+		expect(keyframe.data.props.phase).toEqual({
+			status: 'keyframed',
+			interpolationFunction: 'interpolate',
+			keyframes: [{frame: 30, value: 90}],
+			easing: [],
+			clamping: {left: 'clamp', right: 'clamp'},
+			keyframeDisplayOffsetAdjustment: 0,
+		});
+
+		await expect
+			.poll(
+				() => {
+					const output = fs.readFileSync(effectKeyframeE2eFile, 'utf-8');
+					return (
+						output.includes('const frame = useCurrentFrame();') &&
+						output.includes('phase: interpolate(frame, [30], [90], {')
+					);
+				},
+				{
+					message:
+						'Expected EffectKeyframeE2e.tsx to contain the inserted phase keyframe',
+					timeout: 10_000,
+				},
+			)
+			.toBe(true);
 	});
 });
